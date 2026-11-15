@@ -1,0 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "traductor-pantalla"
+version = "0.1.0"
+description = "Traducción continua y local del texto visible en Windows"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "PySide6-Essentials>=6.8,<7",
+    "windows-capture>=2.0,<3",
+    "numpy>=1.26,<3",
+    "rapidocr==3.4.2",
+    "onnxruntime>=1.21,<2",
+    "ctranslate2>=4.6,<5",
+    "sentencepiece>=0.2,<1",
+]
+
+[project.optional-dependencies]
+build = ["pyinstaller>=6.12,<7"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

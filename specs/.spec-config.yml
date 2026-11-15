@@ -1,0 +1,4 @@
+# spec workflow configuration
+# true: /spec-impl creates and switches to spec-NN-slug automatically.
+# false: /spec-impl asks before creating the branch.
+AutoCreateBranch: true

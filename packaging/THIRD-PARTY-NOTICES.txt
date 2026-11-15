@@ -1,0 +1,15 @@
+Traductor de pantalla — componentes de terceros
+
+Los archivos de licencia distribuidos por los paquetes Python están en licenses/packages.
+Los pesos PP-OCR se distribuyen bajo Apache-2.0. El paquete de OPUS-MT convertido
+por Playto a CTranslate2 y cuantizado a INT8 se distribuye bajo CC BY 4.0.
+Ver models/Apache-2.0.txt y models/manifest.json. La licencia CC BY 4.0
+está disponible en el enlace indicado abajo.
+
+PP-OCRv4 / RapidOCR: https://huggingface.co/SWHL/RapidOCR
+OPUS-MT / Helsinki-NLP: https://huggingface.co/Helsinki-NLP/opus-mt-en-es
+Conversión OPUS-MT / Playto: https://huggingface.co/playto-mt/opus-mt-en-es-ct2
+CC BY 4.0: https://creativecommons.org/licenses/by/4.0/
+PySide6 / Qt: https://www.qt.io/licensing/open-source-lgpl-obligations
+Python: https://docs.python.org/3/license.html
+Microsoft Visual C++ Redistributable: https://learn.microsoft.com/cpp/windows/redistributing-visual-cpp-files

@@ -1,0 +1,30 @@
+{
+  "ocr": {
+    "project": "SWHL/RapidOCR",
+    "license": "Apache-2.0",
+    "revision": "5c3c078eec5d6d10bbc8bd1e44234ac57c6c6a38",
+    "files": {
+      "detector.onnx": {
+        "path": "PP-OCRv4/ch_PP-OCRv4_det_infer.onnx",
+        "sha256": "d2a7720d45a54257208b1e13e36a8479894cb74155a5efe29462512d42f49da9"
+      },
+      "recognizer.onnx": {
+        "path": "PP-OCRv4/ch_PP-OCRv4_rec_infer.onnx",
+        "sha256": "48fc40f24f6d2a207a2b1091d3437eb3cc3eb6b676dc3ef9c37384005483683b"
+      },
+      "classifier.onnx": {
+        "path": "PP-OCRv1/ch_ppocr_mobile_v2.0_cls_infer.onnx",
+        "sha256": "e47acedf663230f8863ff1ab0e64dd2d82b838fceb5957146dab185a89d6215c"
+      }
+    }
+  },
+  "translation": {
+    "project": "Helsinki-NLP/opus-mt-en-es",
+    "license": "CC-BY-4.0",
+    "distributor": "playto-mt/opus-mt-en-es-ct2",
+    "revision": "771eb089548952615b4b1e9a050bf5e629ebc3af",
+    "archive": "opus-mt-en-es-ct2.tar.gz",
+    "archive_sha256": "addfb36ac165b121d5f38a85fb8b3a122fecf66040732f14eed619c279bfa210",
+    "quantization": "int8"
+  }
+}
