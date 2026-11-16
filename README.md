@@ -81,12 +81,12 @@ $prueba.ExitCode
 ## Publicar un instalador creado con InstallForge
 
 1. Creá el instalador en InstallForge a partir de la carpeta `dist\release\TraductorPantalla` completa, incluida `_internal`.
-2. Guardalo en `releases/` con el nombre `TraductorPantalla-Setup-vX.Y.Z-x64.exe`. Por ejemplo, `releases/TraductorPantalla-Setup-v0.1.0-x64.exe`.
-3. Enviá el archivo a `main` con Git. Ejecutá `git lfs install` una vez antes de agregarlo. `.gitattributes` configura Git LFS para estos archivos, que pueden superar el límite de 100 MiB de GitHub. En el primer envío, incluí también el workflow y `.gitattributes` en el commit.
+2. Guardalo directamente en `dist/` con el nombre `TraductorPantalla-Setup-vX.Y.Z-x64.exe`. Por ejemplo, `dist/TraductorPantalla-Setup-v0.1.0-x64.exe`.
+3. Enviá el archivo a `main` con Git. Ejecutá `git lfs install` una vez antes de agregarlo. `.gitattributes` configura Git LFS para estos archivos, que pueden superar el límite de 100 MiB de GitHub. En el primer envío, incluí también el workflow, `.gitattributes` y `.gitignore` en el commit.
 
 ```powershell
 git lfs install
-git add releases/TraductorPantalla-Setup-v0.1.0-x64.exe
+git add dist/TraductorPantalla-Setup-v0.1.0-x64.exe
 git commit -m "Publicar instalador v0.1.0"
 git push origin main
 ```

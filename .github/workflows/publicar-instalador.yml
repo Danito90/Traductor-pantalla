@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
     paths:
-      - 'releases/TraductorPantalla-Setup-v*-x64.exe'
+      - 'dist/TraductorPantalla-Setup-v*-x64.exe'
 
 jobs:
   release:
@@ -67,9 +67,9 @@ jobs:
               git_command = ["ls-tree", "-r", "--name-only", "-z", commit]
           else:
               git_command = ["diff", "--no-renames", "--name-only", "--diff-filter=AM", "-z", before, commit]
-          changed = subprocess.check_output(["git", *git_command, "--", "releases/"])
+          changed = subprocess.check_output(["git", *git_command, "--", "dist/"])
           for path in changed.split(b"\0"):
               installer = os.fsdecode(path)
-              match = re.fullmatch(r"releases/TraductorPantalla-Setup-(v[0-9]+\.[0-9]+\.[0-9]+)-x64\.exe", installer)
+              match = re.fullmatch(r"dist/TraductorPantalla-Setup-(v[0-9]+\.[0-9]+\.[0-9]+)-x64\.exe", installer)
               if match:
                   publish(installer, match[1])
