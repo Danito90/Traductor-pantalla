@@ -2,6 +2,10 @@
 
 Traduce al español el texto en inglés visible en un monitor de Windows 11 x64. La traducción aparece sobre el original. El reconocimiento y la traducción se ejecutan en CPU. La configuración guarda únicamente el monitor y los dos atajos en `%LOCALAPPDATA%\TraductorPantalla\settings.json`.
 
+## Descargar e instalar
+
+Abrí [GitHub Releases](https://github.com/Danito90/Traductor-pantalla/releases/latest) y descargá `TraductorPantalla-Setup-vX.Y.Z-x64.exe` desde **Assets**. Ejecutalo y seguí el asistente de instalación. Después podés abrir la app desde el menú Inicio.
+
 ## Ejecutar desde el código fuente
 
 Abrí PowerShell en la raíz del proyecto. Usá Python 3.11–3.13 de 64 bits. Los comandos usan la versión 3.13, la misma con la que se compiló el ejecutable. Si tenés 3.11 o 3.12, cambiá `-3.13` por la versión instalada.
@@ -43,7 +47,7 @@ La primera vez que compiles, instalá las dependencias de compilación en el mis
 .\.venv\Scripts\python.exe -m pip install -e '.[build]'
 ```
 
-Para cada compilación, prepará los modelos y las licencias y ejecutá el [archivo <<<<<<<<<`.spec`](packaging/traductor-pantalla.spec) desde la raíz del proyecto. La preparación reutiliza los modelos descargados que pasan la verificación.
+Para cada compilación, prepará los modelos y las licencias y ejecutá el [archivo `.spec`](packaging/traductor-pantalla.spec) desde la raíz del proyecto. La preparación reutiliza los modelos descargados que pasan la verificación.
 
 ```powershell
 .\.venv\Scripts\python.exe .\packaging\prepare_models.py
@@ -74,17 +78,20 @@ $prueba = Start-Process -FilePath .\dist\release\TraductorPantalla\TraductorPant
 $prueba.ExitCode
 ```
 
-## Generar el instalador opcional
+## Publicar un instalador creado con InstallForge
 
-Con el entorno anterior e Inno Setup 6.3 o posterior, ejecutá:
+1. Creá el instalador en InstallForge a partir de la carpeta `dist\release\TraductorPantalla` completa, incluida `_internal`.
+2. Guardalo en `releases/` con el nombre `TraductorPantalla-Setup-vX.Y.Z-x64.exe`. Por ejemplo, `releases/TraductorPantalla-Setup-v0.1.0-x64.exe`.
+3. Enviá el archivo a `main` con Git. Ejecutá `git lfs install` una vez antes de agregarlo. `.gitattributes` configura Git LFS para estos archivos, que pueden superar el límite de 100 MiB de GitHub. En el primer envío, incluí también el workflow y `.gitattributes` en el commit.
 
 ```powershell
-.\packaging\build_installer.ps1
+git lfs install
+git add releases/TraductorPantalla-Setup-v0.1.0-x64.exe
+git commit -m "Publicar instalador v0.1.0"
+git push origin main
 ```
 
-El resultado se genera en `dist/TraductorPantalla-Setup-x64.exe`. Podés indicar `-Compiler` si ISCC está en otra carpeta y `-Redistributable` para usar una copia local del redistribuible firmado por Microsoft. La compilación prepara los modelos y registra sus SHA-256. El instalador contiene los modelos y el redistribuible para una instalación sin red.
-
-Una vez instalada, podés abrir la app desde el menú Inicio y desinstalarla desde **Configuración → Aplicaciones → Aplicaciones instaladas**.
+[GitHub Actions](https://github.com/Danito90/Traductor-pantalla/actions) toma la versión del nombre del archivo, crea la release si hace falta y adjunta el instalador en **Assets**. Para distribuir un instalador distinto, usá una versión nueva en el nombre.
 
 ## Verificación en Windows
 

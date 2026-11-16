@@ -1,0 +1,75 @@
+name: Publicar instalador de Windows
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'releases/TraductorPantalla-Setup-v*-x64.exe'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        env:
+          GIT_LFS_SKIP_SMUDGE: '1'
+        with:
+          fetch-depth: 0
+
+      - name: Adjuntar el instalador a GitHub Releases
+        shell: python
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          import hashlib
+          import json
+          import os
+          from pathlib import Path
+          import re
+          import subprocess
+
+          def publish(installer, tag):
+              subprocess.run(["git", "lfs", "pull", f"--include={installer}", "--exclude="], check=True)
+              file = Path(installer)
+              with file.open("rb") as stream:
+                  if stream.read(2) != b"MZ":
+                      raise SystemExit(f"{installer} no es un ejecutable de Windows. Verificá la subida a Git LFS.")
+
+              result = subprocess.run(["gh", "release", "view", tag, "--json", "databaseId,isDraft"], capture_output=True)
+              if result.returncode != 0:
+                  subprocess.run([
+                      "gh", "release", "create", tag, installer, "--target", os.environ["GITHUB_SHA"],
+                      "--title", f"Traductor de pantalla {tag}", "--generate-notes",
+                  ], check=True)
+                  return
+
+              release = json.loads(result.stdout)
+              repo = os.environ["GITHUB_REPOSITORY"]
+              pages = json.loads(subprocess.check_output([
+                  "gh", "api", f"repos/{repo}/releases/{release['databaseId']}/assets", "--paginate", "--slurp",
+              ]))
+              asset = next((asset for page in pages for asset in page if asset["name"] == file.name), None)
+              if asset is None:
+                  subprocess.run(["gh", "release", "upload", tag, installer], check=True)
+              else:
+                  with file.open("rb") as stream:
+                      digest = hashlib.file_digest(stream, "sha256").hexdigest()
+                  if asset.get("digest") != f"sha256:{digest}":
+                      raise SystemExit(f"La release {tag} ya tiene un instalador distinto con ese nombre. Usá una versión nueva.")
+              if release["isDraft"]:
+                  subprocess.run(["gh", "release", "edit", tag, "--draft=false"], check=True)
+
+          before, commit = os.environ["BEFORE"], os.environ["GITHUB_SHA"]
+          if before == "0" * 40:
+              git_command = ["ls-tree", "-r", "--name-only", "-z", commit]
+          else:
+              git_command = ["diff", "--no-renames", "--name-only", "--diff-filter=AM", "-z", before, commit]
+          changed = subprocess.check_output(["git", *git_command, "--", "releases/"])
+          for path in changed.split(b"\0"):
+              installer = os.fsdecode(path)
+              match = re.fullmatch(r"releases/TraductorPantalla-Setup-(v[0-9]+\.[0-9]+\.[0-9]+)-x64\.exe", installer)
+              if match:
+                  publish(installer, match[1])
