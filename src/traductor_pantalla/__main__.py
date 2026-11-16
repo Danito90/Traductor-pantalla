@@ -10,6 +10,12 @@ def main() -> int:
 
     from traductor_pantalla.tray import TrayController
 
+    if sys.argv[1:] == ["--verificar"]:
+        from traductor_pantalla.models import model_root, verify_local_inference
+
+        verify_local_inference(model_root())
+        return 0
+
     app = QApplication(sys.argv)
     app.setApplicationName("Traductor de pantalla")
     app.setQuitOnLastWindowClosed(False)

@@ -5,11 +5,12 @@ from tempfile import TemporaryDirectory
 from threading import Event
 from unittest.mock import patch
 
+import cv2
 import numpy as np
 
 from traductor_pantalla.capture import CaptureFrame
 from traductor_pantalla.ocr import OCRLine
-from traductor_pantalla.session import OverlayBlock, SessionWorker, TranslationCache, fingerprint, visible_blocks
+from traductor_pantalla.session import OverlayBlock, SessionWorker, TranslationCache, fingerprint, text_edges, visible_blocks
 from traductor_pantalla.settings import Settings, load_settings, save_settings
 
 
@@ -54,6 +55,26 @@ class SessionTests(unittest.TestCase):
         latest.pixels_bgra[1, 1, 0] = 40
         self.assertEqual(visible_blocks(latest, blocks), (blocks[1],))
         self.assertFalse(visible_blocks(frame(session=2), blocks))
+
+    def test_translucent_menu_keeps_translation_while_background_moves(self):
+        width, height = 240, 36
+        bounds = (0, 0, width, height)
+
+        def menu_frame(number, label, offset):
+            background = np.tile(58 + 21 * np.sin((np.arange(width) + offset) / 7), (height, 1))
+            pixels = np.repeat(background.astype(np.uint8)[:, :, None], 4, axis=2)
+            cv2.putText(pixels, label, (5, 26), cv2.FONT_HERSHEY_SIMPLEX, 0.65,
+                        (224, 224, 224, 255), 1, cv2.LINE_AA)
+            return CaptureFrame(1, number, 0, "monitor", width, height, pixels)
+
+        initial = menu_frame(1, "Input Calibration", 0)
+        moved = menu_frame(2, "Input Calibration", 28)
+        block = OverlayBlock(1, 1, bounds, fingerprint(initial, bounds), "Calibración de entrada",
+                             text_edges(initial, bounds))
+        self.assertNotEqual(fingerprint(moved, bounds), block.region_fingerprint)
+        self.assertEqual(visible_blocks(moved, (block,)), (block,))
+        self.assertFalse(visible_blocks(menu_frame(3, "Output Calibration", 28), (block,)))
+        self.assertFalse(visible_blocks(menu_frame(4, "", 28), (block,)))
 
     def test_translation_cache_deduplicates_and_stays_bounded(self):
         translator = Translator()

@@ -2,29 +2,79 @@
 
 Traduce al español el texto en inglés visible en un monitor de Windows 11 x64. La traducción aparece sobre el original. El reconocimiento y la traducción se ejecutan en CPU. La configuración guarda únicamente el monitor y los dos atajos en `%LOCALAPPDATA%\TraductorPantalla\settings.json`.
 
-## Uso
-
-1. Instalá `TraductorPantalla-Setup-x64.exe` y abrí **Traductor de pantalla** desde el menú Inicio.
-2. Buscá el icono **ES** en la bandeja de Windows. Si hay varios monitores, elegí uno en **Monitor**.
-3. Pulsá **Ctrl+Alt+F8** para iniciar. Pulsalo nuevamente para pausar.
-4. Pulsá **Ctrl+Alt+F9** para alternar entre la traducción y el original mientras la sesión sigue activa.
-
-El menú del icono también permite ejecutar esas acciones y salir. Abrí **Configuración…** desde el menú o con doble clic en **ES** para editar los atajos y activar **Iniciar con Windows**. Esta opción viene desactivada. Al activarla, el traductor se abre en pausa cada vez que iniciás sesión en tu cuenta de Windows.
-
-Podés desinstalar la app desde **Configuración → Aplicaciones → Aplicaciones instaladas**.
-
 ## Ejecutar desde el código fuente
 
-Usá Python 3.11–3.13 de 64 bits y PowerShell en la raíz del proyecto. La preparación inicial requiere PyPI para las dependencias, Hugging Face para los modelos y el sitio de Apache para la licencia del OCR. La atribución y el enlace a la licencia de traducción están en `packaging/THIRD-PARTY-NOTICES.txt`.
+Abrí PowerShell en la raíz del proyecto. Usá Python 3.11–3.13 de 64 bits. Los comandos usan la versión 3.13, la misma con la que se compiló el ejecutable. Si tenés 3.11 o 3.12, cambiá `-3.13` por la versión instalada.
+
+La primera vez, creá el entorno virtual, instalá la aplicación en modo editable y prepará los modelos. Esta preparación requiere acceso a PyPI, Hugging Face y al sitio de Apache.
 
 ```powershell
-py -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e '.[build]'
-.\.venv\Scripts\python.exe packaging/prepare_models.py
+py -3.13 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -e .
+.\.venv\Scripts\python.exe .\packaging\prepare_models.py
+```
+
+Una vez que aparezca `Modelos locales verificados.`, iniciá la app con este comando. Usalo también para los siguientes arranques. La ruta explícita al Python de `.venv` evita tener que activar el entorno.
+
+```powershell
 .\.venv\Scripts\python.exe -m traductor_pantalla
 ```
 
-## Generar el instalador
+### Usar la aplicación
+
+1. La app arranca en pausa. Buscá **ES** en la bandeja de Windows o entre los iconos ocultos junto al reloj.
+2. Si tenés varias pantallas, elegí la que querés traducir desde **ES → Monitor**.
+3. Pulsá **Ctrl+Alt+F8** para iniciar o pausar. El menú también ofrece **Iniciar traducción**.
+4. Pulsá **Ctrl+Alt+F9** para mostrar el original y volver a la traducción mientras la sesión sigue activa.
+
+Con doble clic en **ES**, o desde **Configuración…** en el menú, podés editar los atajos y activar **Iniciar con Windows**. Cuando esa opción está activa, el traductor se abre en pausa al iniciar sesión.
+
+### iRacing y otros juegos
+
+Usá el modo ventana sin bordes para que Windows pueda mostrar la traducción sobre el simulador. En iRacing, elegí el modo ventana en **Settings → Display** y desactivá **Border**. Elegí en **ES → Monitor** la pantalla donde se ve el menú que querés traducir. [Guía de iRacing](https://support.iracing.com/support/solutions/articles/31000171395-setting-up-three-monitors)
+
+## Compilar una nueva versión del `.exe` con PyInstaller
+
+Usá el entorno del paso anterior. Cerrá el traductor desde **ES → Salir** si estás ejecutando una versión dentro de `dist\release`, para que Windows libere los archivos que PyInstaller va a reemplazar.
+
+La primera vez que compiles, instalá las dependencias de compilación en el mismo entorno:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -e '.[build]'
+```
+
+Para cada compilación, prepará los modelos y las licencias y ejecutá el [archivo `.spec`](packaging/traductor-pantalla.spec) desde la raíz del proyecto. La preparación reutiliza los modelos descargados que pasan la verificación.
+
+```powershell
+.\.venv\Scripts\python.exe .\packaging\prepare_models.py
+.\.venv\Scripts\python.exe .\packaging\prepare_licenses.py
+.\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean `
+    --workpath .\build\release --distpath .\dist\release `
+    .\packaging\traductor-pantalla.spec
+```
+
+El `.spec` incluye los modelos, las licencias y las dependencias nativas. También acota la búsqueda de DLL durante la compilación para evitar conflictos con otros entornos del sistema.
+
+El resultado queda en **`dist\release\TraductorPantalla\TraductorPantalla.exe`**. Abrilo desde esa carpeta con **`_internal`** a su lado. Para distribuir la versión portable, copiá o comprimí la carpeta `TraductorPantalla` completa. En la PC de destino podés usarla sin instalar Python.
+
+Si ya tenías un ZIP de una versión anterior, generá uno nuevo después de verificar el ejecutable:
+
+```powershell
+Compress-Archive -LiteralPath .\dist\release\TraductorPantalla `
+    -DestinationPath .\dist\release\TraductorPantalla-Windows-x64.zip -Force
+```
+
+### Verificar el ejecutable compilado
+
+Este comando prueba el OCR y la traducción con los modelos incluidos en el ejecutable. El código de salida `0` indica que la prueba pasó.
+
+```powershell
+$prueba = Start-Process -FilePath .\dist\release\TraductorPantalla\TraductorPantalla.exe `
+    -ArgumentList '--verificar' -Wait -PassThru
+$prueba.ExitCode
+```
+
+## Generar el instalador opcional
 
 Con el entorno anterior e Inno Setup 6.3 o posterior, ejecutá:
 
@@ -33,6 +83,8 @@ Con el entorno anterior e Inno Setup 6.3 o posterior, ejecutá:
 ```
 
 El resultado se genera en `dist/TraductorPantalla-Setup-x64.exe`. Podés indicar `-Compiler` si ISCC está en otra carpeta y `-Redistributable` para usar una copia local del redistribuible firmado por Microsoft. La compilación prepara los modelos y registra sus SHA-256. El instalador contiene los modelos y el redistribuible para una instalación sin red.
+
+Una vez instalada, podés abrir la app desde el menú Inicio y desinstalarla desde **Configuración → Aplicaciones → Aplicaciones instaladas**.
 
 ## Verificación en Windows
 

@@ -92,38 +92,16 @@ def verify_assets():
             raise RuntimeError(f"Modelo faltante o modificado: {name}")
 
 
-def check_inference():
-    import cv2
-    import numpy as np
-
-    from traductor_pantalla.capture import CaptureFrame
-    from traductor_pantalla.ocr import ScreenOCR
-    from traductor_pantalla.translation import LocalTranslator
-
-    pixels = np.full((240, 800, 4), 255, dtype=np.uint8)
-    cv2.putText(pixels, "Save changes", (30, 130), cv2.FONT_HERSHEY_SIMPLEX, 1.5,
-                (0, 0, 0, 255), 2, cv2.LINE_AA)
-    frame = CaptureFrame(1, 1, 0, "test", 800, 240, pixels)
-    lines = ScreenOCR(DESTINATION / "ocr").read(frame)
-    text = " ".join(line.text for line in lines)
-    if "save changes" not in text.casefold():
-        raise RuntimeError("Los modelos OCR no pudieron reconocer el texto de prueba.")
-    translation, = LocalTranslator(DESTINATION / "translation").translate([text])
-    if "cambios" not in translation.casefold():
-        raise RuntimeError("El modelo de traducción no produjo la salida esperada en español.")
-
-
 def main():
-    from traductor_pantalla.models import require_models
+    from traductor_pantalla.models import verify_local_inference
 
     lock = json.loads((PROJECT / "models" / "models.lock.json").read_text(encoding="utf-8"))
     manifest = DESTINATION / "manifest.json"
     if manifest.is_file():
         existing = json.loads(manifest.read_text(encoding="utf-8"))
         if existing["sources"] == lock and existing["ctranslate2"] == version("ctranslate2"):
-            require_models(DESTINATION)
             verify_assets()
-            check_inference()
+            verify_local_inference(DESTINATION)
             print("Modelos locales verificados.")
             return
     DESTINATION.mkdir(parents=True, exist_ok=True)
@@ -132,8 +110,7 @@ def main():
     apache_license = DESTINATION / "Apache-2.0.txt"
     if not apache_license.is_file() or apache_license.stat().st_size == 0:
         download("https://www.apache.org/licenses/LICENSE-2.0.txt", apache_license)
-    require_models(DESTINATION)
-    check_inference()
+    verify_local_inference(DESTINATION)
     report = {"sources": lock, "ctranslate2": version("ctranslate2"),
               "sha256": {path.relative_to(DESTINATION).as_posix(): sha256(path)
                          for directory in ("ocr", "translation")

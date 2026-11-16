@@ -21,6 +21,8 @@ class ScreenOCR:
             "Global.max_side_len": 2400,
             "Global.text_score": 0.65,
             "Global.font_path": str(font),
+            "EngineConfig.onnxruntime.intra_op_num_threads": min(4, os.cpu_count() or 1),
+            "EngineConfig.onnxruntime.inter_op_num_threads": 1,
             "Det.engine_type": EngineType.ONNXRUNTIME,
             "Cls.engine_type": EngineType.ONNXRUNTIME,
             "Rec.engine_type": EngineType.ONNXRUNTIME,

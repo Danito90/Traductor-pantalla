@@ -3,6 +3,9 @@ from dataclasses import dataclass
 from hashlib import blake2b
 from threading import Condition, Thread
 
+import cv2
+import numpy as np
+
 from .capture import CaptureFrame
 from .ocr import ScreenOCR
 from .translation import LocalTranslator
@@ -16,6 +19,7 @@ class TextBlock:
     source_text: str
     ocr_confidence: float
     region_fingerprint: bytes
+    text_edges: bytes
 
 
 @dataclass(frozen=True)
@@ -25,6 +29,7 @@ class OverlayBlock:
     bounds_px: tuple[int, int, int, int]
     region_fingerprint: bytes
     translated_text: str
+    text_edges: bytes = b""
 
 
 def fingerprint(frame: CaptureFrame, bounds=None) -> bytes:
@@ -35,12 +40,33 @@ def fingerprint(frame: CaptureFrame, bounds=None) -> bytes:
     return blake2b(pixels if pixels.flags.c_contiguous else pixels.tobytes(), digest_size=16).digest()
 
 
+def text_edges(frame: CaptureFrame, bounds) -> bytes:
+    left, top, right, bottom = bounds
+    region = frame.pixels_bgra[top:bottom, left:right]
+    gray = cv2.cvtColor(region, cv2.COLOR_BGRA2GRAY)
+    contrast = gray.astype(np.int16) - cv2.GaussianBlur(gray, (5, 5), 0)
+    return ((contrast >= 18).astype(np.int8) - (contrast <= -18)).tobytes()
+
+
+def _text_matches(frame: CaptureFrame, block: OverlayBlock) -> bool:
+    if fingerprint(frame, block.bounds_px) == block.region_fingerprint:
+        return True
+    if not block.text_edges:
+        return False
+    reference = np.frombuffer(block.text_edges, dtype=np.int8)
+    current = np.frombuffer(text_edges(frame, block.bounds_px), dtype=np.int8)
+    foreground = (reference != 0) | (current != 0)
+    total = np.count_nonzero(foreground)
+    # Comparar contraste local permite que cambie el fondo tras un menú translúcido.
+    return total > 0 and np.count_nonzero((reference == current) & foreground) >= 0.83 * total
+
+
 def visible_blocks(frame, blocks) -> tuple[OverlayBlock, ...]:
     if frame is None:
         return ()
     return tuple(block for block in blocks if block.session_id == frame.session_id
                  and block.bounds_px[2] <= frame.width_px and block.bounds_px[3] <= frame.height_px
-                 and fingerprint(frame, block.bounds_px) == block.region_fingerprint)
+                 and _text_matches(frame, block))
 
 
 class TranslationCache:
@@ -156,12 +182,13 @@ class SessionWorker:
     def _process(self, frame, ocr, translator, cache):
         lines = ocr.read(frame)
         blocks = [TextBlock(frame.session_id, frame.frame_id, line.bounds_px, line.text,
-                            line.confidence, fingerprint(frame, line.bounds_px)) for line in lines]
+                            line.confidence, fingerprint(frame, line.bounds_px),
+                            text_edges(frame, line.bounds_px)) for line in lines]
         with self.condition:
             if frame.session_id != self.session_id or self.closed:
                 return ()
         translations = cache.translate(translator, [block.source_text for block in blocks])
         return tuple(OverlayBlock(block.session_id, block.frame_id, block.bounds_px,
-                                  block.region_fingerprint, translations[block.source_text])
+                                  block.region_fingerprint, translations[block.source_text], block.text_edges)
                      for block in blocks if translations[block.source_text]
                      and translations[block.source_text] != block.source_text)
