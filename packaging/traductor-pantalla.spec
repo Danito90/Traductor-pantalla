@@ -9,11 +9,14 @@ from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
 root = Path(SPECPATH).resolve().parent
 models = root / "models/assets"
 licenses = root / "build/third-party-licenses"
+icon = models / "icon/gtranslator.ico"
 
 if not (models / "manifest.json").is_file():
     raise SystemExit("Prepará los modelos con packaging/prepare_models.py antes de compilar.")
 if not licenses.is_dir():
     raise SystemExit("Prepará las licencias con packaging/prepare_licenses.py antes de compilar.")
+if not icon.is_file():
+    raise SystemExit("Falta el icono models/assets/icon/gtranslator.ico.")
 
 # Reduce la búsqueda de DLL a Windows y al entorno usado para compilar.
 # Los hooks de PyInstaller agregan los directorios nativos de cada paquete.
@@ -33,5 +36,5 @@ analysis = Analysis(
 )
 pyz = PYZ(analysis.pure)
 exe = EXE(pyz, analysis.scripts, [], exclude_binaries=True, name="TraductorPantalla",
-          console=False, upx=False)
+          console=False, icon=str(icon), upx=False)
 app = COLLECT(exe, analysis.binaries, analysis.datas, upx=False, name="TraductorPantalla")

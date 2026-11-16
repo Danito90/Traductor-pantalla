@@ -43,7 +43,7 @@ La primera vez que compiles, instalá las dependencias de compilación en el mis
 .\.venv\Scripts\python.exe -m pip install -e '.[build]'
 ```
 
-Para cada compilación, prepará los modelos y las licencias y ejecutá el [archivo `.spec`](packaging/traductor-pantalla.spec) desde la raíz del proyecto. La preparación reutiliza los modelos descargados que pasan la verificación.
+Para cada compilación, prepará los modelos y las licencias y ejecutá el [archivo <<<<<<<<<`.spec`](packaging/traductor-pantalla.spec) desde la raíz del proyecto. La preparación reutiliza los modelos descargados que pasan la verificación.
 
 ```powershell
 .\.venv\Scripts\python.exe .\packaging\prepare_models.py

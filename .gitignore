@@ -3,4 +3,7 @@ __pycache__/
 *.egg-info/
 build/
 dist/
-models/assets/
+models/assets/*
+!models/assets/icon/
+models/assets/icon/*
+!models/assets/icon/gtranslator.ico
